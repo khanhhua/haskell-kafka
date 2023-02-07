@@ -4,7 +4,7 @@ module Data.Protocol.Fetch where
 
 import Data.Int
 -- import Data.ByteString (ByteString)
-import Data.ByteString.Builder (Builder, int32BE, int64BE, toLazyByteString)
+import Data.ByteString.Builder (Builder, int32BE, int64BE)
 
 import Data.Protocol.Types
   ( ReplicaId
@@ -14,20 +14,12 @@ import Data.Protocol.Types
   , ErrorCode
   , Records
   )
-import Data.Binary.Get
-  ( getInt16be
-  , getInt32be
-  , getInt64be
-  , getRemainingLazyByteString
-  , runGet
-  , getByteString
-  )
 import qualified Data.ByteString.Char8 as Char8
-import qualified Data.ByteString.Lazy as BL
-import Data.ByteString (fromStrict)
 import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV0, RequestHeaderV1), ApiKey (Fetch))
 import Data.Protocol.Classes
 import Data.Protocol.NullableString (stringToBuilder)
+import Data.Binary (Get)
+import Data.Binary.Get (getInt16be, getByteString, getInt32be, getInt64be)
 
 type Partition = Int32
 type FetchOffset = Int64
@@ -57,10 +49,6 @@ instance KafkaRequest FetchRequest where
   body = toBuilder
 
 
-instance KafkaResponse FetchResponse where
-  fromByteString = fromByteString_ . fromStrict
-
-
 toBuilder :: FetchRequest -> Builder
 toBuilder (FetchRequestV0 replicaId maxWaitMs minBytes (topicName, (partition_, fetchOffset, partitionMaxBytes))) =
   int32BE replicaId
@@ -72,16 +60,13 @@ toBuilder (FetchRequestV0 replicaId maxWaitMs minBytes (topicName, (partition_, 
   <> int32BE partitionMaxBytes
 toBuilder (FetchRequestV1 {}) = undefined
 
-fromByteString_ :: BL.ByteString -> FetchResponse
-fromByteString_ =
-  runGet byteDecoder
-  where
-    byteDecoder = do
-      topicLength <- getInt16be
-      topicName <- Char8.unpack <$> getByteString (fromIntegral topicLength)
-      partitionIndex <- getInt32be
-      errorCode <- toEnum. fromIntegral <$> getInt16be
-      highWatermark <- getInt64be
-      records <- BL.toStrict <$> getRemainingLazyByteString
-      
-      return $ FetchResponseV0 topicName partitionIndex errorCode highWatermark records
+getFetchResponse :: Int -> Get FetchResponse
+getFetchResponse size = do
+  topicLength <- getInt16be
+  topicName <- Char8.unpack <$> getByteString (fromIntegral topicLength)
+  partitionIndex <- getInt32be
+  errorCode <- toEnum. fromIntegral <$> getInt16be
+  highWatermark <- getInt64be
+  records <- getByteString (size - 16 - 16 - 32 - 16 - 64)
+  
+  return $ FetchResponseV0 topicName partitionIndex errorCode highWatermark records

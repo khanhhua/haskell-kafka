@@ -2,6 +2,7 @@ module Data.Protocol.MessageHeader where
 
 import Data.Int (Int16, Int32)
 import Data.Binary.Builder (Builder)
+import Data.Binary.Get (Get, getInt32be, getInt16be, getByteString)
 import Data.Protocol.NullableString (NullableString, nullableStringToBuilder)
 import Data.ByteString.Builder (int16BE, int32BE)
 
@@ -282,3 +283,15 @@ headerToBuilder (RequestHeaderV1 apiKey apiVersion correlationId clientId) =
   <> int16BE (fromIntegral apiVersion)
   <> int32BE (fromIntegral correlationId)
   <> nullableStringToBuilder clientId
+
+
+getMessageHeader :: Get (MessageHeader, Int)
+getMessageHeader = do
+  size <- getInt32be
+  apiKey <- toEnum . fromIntegral <$> getInt16be
+  apiVersion <- getInt16be
+  correlationId <- getInt32be
+
+  let
+    messageHeader = RequestHeaderV0 apiKey apiVersion correlationId
+  return (messageHeader, fromIntegral size - 64)

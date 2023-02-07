@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as BL
 
 import Data.Protocol.Classes
-    ( KafkaResponse(..), KafkaRequest(..) )
+    ( KafkaRequest(..) )
 import Data.Protocol.Types
 import Data.ByteString ( fromStrict )
 import Data.Protocol.MessageHeader (MessageHeader (RequestHeaderV0, RequestHeaderV1), CorrelationId, ApiKey (Produce))
@@ -37,10 +37,6 @@ instance KafkaRequest ProduceRequest where
   body = toBuilder
 
 
-instance KafkaResponse ProduceResponse where
-  fromByteString = fromByteString_ . fromStrict
-
-
 toBuilder :: ProduceRequest -> Builder
 toBuilder (ProduceRequestV0 acks timeoutMs (name, index, records)) =
   int16BE acks 
@@ -63,15 +59,12 @@ toBuilder (ProduceRequestV3 transactionid acks timeoutMs (name, index, records))
   <> byteString records
 
 
-fromByteString_ :: BL.ByteString -> ProduceResponse
-fromByteString_ =
-  runGet byteDecoder
-  where
-    byteDecoder = do
-      topicLength <- getInt16be
-      topicName <- Char8.unpack <$> getByteString (fromIntegral topicLength)
-      index <- getInt32be
-      errorCode <- toEnum . fromIntegral <$> getInt16be
-      baseOffset <- getInt64be
+getProduceResponse :: Get ProduceResponse
+getProduceResponse = do
+  topicLength <- getInt16be
+  topicName <- Char8.unpack <$> getByteString (fromIntegral topicLength)
+  index <- getInt32be
+  errorCode <- toEnum . fromIntegral <$> getInt16be
+  baseOffset <- getInt64be
 
-      return $ ProduceResponseV0 topicName (index, errorCode, baseOffset)
+  return $ ProduceResponseV0 topicName (index, errorCode, baseOffset)
