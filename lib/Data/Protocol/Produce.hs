@@ -1,31 +1,33 @@
 {-# LANGUAGE InstanceSigs #-}
 module Data.Protocol.Produce where
 
+import Data.Maybe (fromMaybe)
 import Data.ByteString.Builder
 import Data.Binary.Get
-import qualified Data.ByteString.Char8 as Char8
-import qualified Data.ByteString.Lazy as BL
 
 import Data.Protocol.Classes
     ( KafkaRequest(..) )
 import Data.Protocol.Types
-import Data.ByteString ( fromStrict )
-import Data.Protocol.MessageHeader (MessageHeader (RequestHeaderV0, RequestHeaderV1), CorrelationId, ApiKey (Produce))
-import Data.Protocol.NullableString (nullableStringToBuilder)
+import Data.Protocol.MessageHeader (MessageHeader (RequestHeaderV0, RequestHeaderV1), CorrelationId)
+import Data.Protocol.NullableString (nullableStringToBuilder, getNullableString)
+import Data.Protocol.ApiKey
+import Data.Protocol.Array (getArray, arrayToBuilder)
 
 
 type TopicData = (TopicName, Index, Records)
 
+type PartitionResponse = (Index, ErrorCode, BaseOffset)
+
 data ProduceRequest
-  = ProduceRequestV0 Acks TimeoutMs TopicData
-  | ProduceRequestV1 Acks TimeoutMs TopicData
-  | ProduceRequestV3 TransactionId Acks TimeoutMs TopicData
+  = ProduceRequestV0 Acks TimeoutMs [TopicData]
+  | ProduceRequestV1 Acks TimeoutMs [TopicData]
+  | ProduceRequestV3 TransactionId Acks TimeoutMs [TopicData]
 
 
 data ProduceResponse
-  = ProduceResponseV0 TopicName (Index, ErrorCode, BaseOffset)
-  | ProduceResponseV1 TopicName (Index, ErrorCode, BaseOffset) ThrottleTimeMs
-  | ProduceResponseV3 TopicName (Index, ErrorCode, BaseOffset, LogAppendTimeMs) ThrottleTimeMs
+  = ProduceResponseV0 TopicName [PartitionResponse]
+  | ProduceResponseV1 TopicName [PartitionResponse] ThrottleTimeMs
+  | ProduceResponseV3 TopicName [PartitionResponse] ThrottleTimeMs
 
 
 instance KafkaRequest ProduceRequest where
@@ -37,34 +39,60 @@ instance KafkaRequest ProduceRequest where
   body = toBuilder
 
 
+topicDataToBuilder :: TopicData -> Builder
+topicDataToBuilder (name, index, records) =
+  string8 name
+  <> int32BE index
+  <> byteString records
+
+
 toBuilder :: ProduceRequest -> Builder
-toBuilder (ProduceRequestV0 acks timeoutMs (name, index, records)) =
+toBuilder (ProduceRequestV0 acks timeoutMs topicData) =
   int16BE acks 
   <> int32BE timeoutMs
-  <> string8 name
-  <> int32BE index
-  <> byteString records
-toBuilder (ProduceRequestV1 acks timeoutMs (name, index, records)) =
+  <> arrayToBuilder topicDataToBuilder topicData
+toBuilder (ProduceRequestV1 acks timeoutMs topicData) =
   int16BE acks 
   <> int32BE timeoutMs
-  <> string8 name
-  <> int32BE index
-  <> byteString records
-toBuilder (ProduceRequestV3 transactionid acks timeoutMs (name, index, records)) =
+  <> arrayToBuilder topicDataToBuilder topicData
+toBuilder (ProduceRequestV3 transactionid acks timeoutMs topicData) =
   nullableStringToBuilder transactionid
   <> int16BE acks 
   <> int32BE timeoutMs
-  <> string8 name
-  <> int32BE index
-  <> byteString records
+  <> arrayToBuilder topicDataToBuilder topicData
 
 
-getProduceResponse :: Get ProduceResponse
-getProduceResponse = do
-  topicLength <- getInt16be
-  topicName <- Char8.unpack <$> getByteString (fromIntegral topicLength)
+getProduceResponse :: ApiVersion -> Get [ProduceResponse]
+getProduceResponse = getArray . getProduceResponseItem
+
+
+getProduceResponseItem :: ApiVersion -> Get ProduceResponse
+getProduceResponseItem apiVersion = do
+  topicName <- fromMaybe "" <$> getNullableString
+
+  case apiVersion of
+    0 -> do
+      ProduceResponseV0 topicName <$> getPartitionResponseArray
+    1 -> do
+      partitionResponseArray <- getPartitionResponseArray
+      ProduceResponseV1 topicName partitionResponseArray <$> getInt32be
+    3 -> do
+      partitionResponseArray <- getPartitionResponseArray
+      ProduceResponseV3 topicName partitionResponseArray <$> getInt32be
+    _ -> undefined
+
+
+getPartitionResponse :: Get [PartitionResponse]
+getPartitionResponse = getPartitionResponseArray
+
+getPartitionResponseArray :: Get [PartitionResponse]
+getPartitionResponseArray = getArray getPartitionResponseItem
+
+
+getPartitionResponseItem :: Get PartitionResponse
+getPartitionResponseItem = do
   index <- getInt32be
   errorCode <- toEnum . fromIntegral <$> getInt16be
   baseOffset <- getInt64be
 
-  return $ ProduceResponseV0 topicName (index, errorCode, baseOffset)
+  return (index, errorCode, baseOffset)

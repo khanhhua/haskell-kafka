@@ -25,6 +25,7 @@ common shared-properties
   default-language: Haskell2010
   build-depends:
       base >= 4.16.4.0
+    , network >= 3.1.2.7
     , bytestring >= 0.11.3.1
     , binary >= 0.8.0.0
   default-extensions:
@@ -43,7 +44,6 @@ executable haskell-kafka
     import: shared-properties
     default-language: Haskell2010
     hs-source-dirs:   app
-    default-language: Haskell2010
     build-depends:
         base >= 4.16.4.0
       , haskell-kafka-lib
@@ -54,11 +54,16 @@ library haskell-kafka-lib
     import: shared-properties
     hs-source-dirs:   lib
     exposed-modules:
-        Data.Protocol
-      , Data.Protocol.Types
-      , Data.Protocol.NullableString
+        Client.Broker
+      , Data.Protocol
+      , Data.Protocol.ApiKey
+      , Data.Protocol.ApiVersions
+      , Data.Protocol.Array
       , Data.Protocol.Classes
-      , Data.Protocol.MessageHeader
-      , Data.Protocol.Produce
       , Data.Protocol.Fetch
+      , Data.Protocol.MessageHeader
+      , Data.Protocol.NullableByte
+      , Data.Protocol.NullableString
+      , Data.Protocol.Produce
+      , Data.Protocol.Types
     default-language: Haskell2010

@@ -29,14 +29,11 @@ encodeMessage message correlationId =
   in (toStrict . encode) size <> payload
 
 
-decodeHeader :: Get (MessageHeader, Int)
-decodeHeader = do
-  size <- getInt32be
-  apiKey <- toEnum . fromIntegral <$> getInt16be
-  apiVersion <- getInt16be
+decodeResponse :: Get a -> Get (CorrelationId, a)
+decodeResponse responseBodyDecoder = do
+  _size <- getInt32be
   correlationId <- getInt32be
+  response <- responseBodyDecoder
 
-  let
-    messageHeader = RequestHeaderV0 apiKey apiVersion correlationId 
-  return (messageHeader, fromIntegral size - 64)
+  return (correlationId, response)
 
