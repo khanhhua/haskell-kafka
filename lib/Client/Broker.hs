@@ -1,4 +1,4 @@
-module Client.Broker (getSupportedApis) where
+module Client.Broker (getSupportedApis, getMetadata) where
 
 import Network.Socket (Socket)
 import Network.Socket.ByteString (recv, sendAll)
@@ -10,6 +10,8 @@ import Data.Protocol.MessageHeader (CorrelationId)
 import Data.Binary.Get (runGet)
 import qualified Data.ByteString.Lazy as B
 import Data.Protocol.Classes (KafkaRequest)
+import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV0), MetadataResponse (MetadataResponseV0), getMetadataResponse)
+import Data.Protocol.Types (TopicName)
 
 
 dEFAULT_BUFFER_SIZE = 4096 :: Int
@@ -37,7 +39,24 @@ getSupportedApis sock = do
     ApiVersionsReponseV0 _errorCode apiVersions -> return apiVersions
     ApiVersionsReponseV1 _errorCode apiVersions _throttleTimeoutMs -> return apiVersions
 
+  where
+    decoder :: Get (CorrelationId, ApiVersionsResponse)
+    decoder = decodeResponse (getApiVersionsResponse 0)
 
-decoder :: Get (CorrelationId, ApiVersionsResponse)
-decoder = decodeResponse (getApiVersionsResponse 0)
-  
+
+getMetadata :: Socket -> [TopicName] -> IO [Broker]
+getMetadata sock topicName = do
+  let
+    correlationId = 1
+    req = MetadataRequestV0 topicName
+
+  bytes <- sendAndRecv sock req correlationId
+
+  let
+    (_messageHeader, metadataResponse) = runGet decoder bytes
+  case metadataResponse of
+    MetadataResponseV0 brokers _ -> return brokers
+
+  where
+    decoder :: Get (CorrelationId, MetadataResponse)
+    decoder = decodeResponse (getMetadataResponse 0)

@@ -62,6 +62,7 @@ library haskell-kafka-lib
       , Data.Protocol.Classes
       , Data.Protocol.Fetch
       , Data.Protocol.MessageHeader
+      , Data.Protocol.Metadata
       , Data.Protocol.NullableByte
       , Data.Protocol.NullableString
       , Data.Protocol.Produce

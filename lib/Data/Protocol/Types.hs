@@ -3,8 +3,10 @@ module Data.Protocol.Types where
 import Data.Int
 import Data.ByteString (ByteString)
 import Data.Protocol.NullableString (NullableString)
-import Data.Binary.Builder (Builder)
 import Data.ByteString.Builder (int16BE)
+import Data.Binary (Get)
+import Data.Binary.Builder (Builder)
+import Data.Binary.Get (getInt16be)
 
 
 data PrimitiveType
@@ -465,6 +467,9 @@ instance Enum ErrorCode where
     toEnum 108 = NEW_LEADER_ELECTED
     toEnum _ = UNKNOWN_SERVER_ERROR
 
+getErrorCode :: Get ErrorCode
+getErrorCode = toEnum . fromIntegral <$> getInt16be
+
 type ReplicaId = Int32
 
 type Records = ByteString
@@ -482,6 +487,7 @@ type LogAppendTimeMs = Int32
 type MaxWaitMs = Int32
 
 type Index = Int32
+type PartitionIndex = Int32
 
 type BaseOffset = Int64
 

@@ -11,14 +11,13 @@ import Data.Protocol.Types
   , MinBytes
   , TopicName
   , ErrorCode
-  , Records
+  , Records, PartitionIndex
   )
-import qualified Data.ByteString.Char8 as Char8
 import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV0, RequestHeaderV1))
 import Data.Protocol.Classes
 import Data.Protocol.NullableString (stringToBuilder, getString)
 import Data.Binary (Get)
-import Data.Binary.Get (getInt16be, getByteString, getInt32be, getInt64be)
+import Data.Binary.Get (getInt16be, getInt32be, getInt64be)
 import Data.Protocol.ApiKey (ApiKey(Fetch), ApiVersion)
 import Data.Protocol.Array (arrayToBuilder, getArray)
 import Data.Protocol.NullableByte (getNullableBytes)
@@ -27,7 +26,6 @@ type Partition = Int32
 type FetchOffset = Int64
 type PartitionMaxBytes = Int32
 
-type PartitionIndex = Int32
 type HighWatermark = Int64
 
 type PartitionRequest = (Partition, FetchOffset, PartitionMaxBytes)

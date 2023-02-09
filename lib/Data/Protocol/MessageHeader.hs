@@ -2,7 +2,6 @@ module Data.Protocol.MessageHeader where
 
 import Data.Int (Int32)
 import Data.Binary.Builder (Builder)
-import Data.Binary.Get (Get, getInt32be, getInt16be)
 import Data.Protocol.NullableString (NullableString, nullableStringToBuilder)
 import Data.ByteString.Builder (int16BE, int32BE)
 import Data.Protocol.ApiKey

@@ -1,11 +1,11 @@
 {-# LANGUAGE InstanceSigs #-}
 module Data.Protocol.ApiVersions where
 
-import Data.Protocol.ApiKey ( ApiKey(ApiVersions), ApiVersion )
+import Data.Protocol.ApiKey ( ApiKey(ApiVersions), ApiVersion, getApiKey )
 import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV0))
 import Data.Protocol.Classes
 import Data.Binary.Builder (empty)
-import Data.Protocol.Types (ErrorCode, ThrottleTimeMs)
+import Data.Protocol.Types (ErrorCode, ThrottleTimeMs, getErrorCode)
 import Data.Int (Int16)
 import Data.Binary (Get)
 import Data.Binary.Get (getInt16be, getInt32be)
@@ -35,7 +35,7 @@ instance KafkaRequest ApiVersionsRequest where
 
 getApiVersionsResponse :: ApiVersion -> Get ApiVersionsResponse
 getApiVersionsResponse apiVersion = do
-  errorCode <- toEnum . fromIntegral <$> getInt16be
+  errorCode <- getErrorCode
   n <- fromIntegral <$> getInt32be
   apiKeyVersions <- replicateM n getApiKeyVersion
 
@@ -50,7 +50,7 @@ getApiVersionsResponse apiVersion = do
 
 getApiKeyVersion :: Get ApiKeyVersion
 getApiKeyVersion = do
-  apiKey <- toEnum . fromIntegral <$> getInt16be
+  apiKey <- getApiKey
   minVersion <- getInt16be
   maxVersion <- getInt16be
 

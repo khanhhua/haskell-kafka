@@ -1,7 +1,9 @@
 module Data.Protocol.ApiKey where
 import Data.Int (Int16)
-import Data.Binary.Builder (Builder)
 import Data.ByteString.Builder (int16BE)
+import Data.Binary (Get)
+import Data.Binary.Builder (Builder)
+import Data.Binary.Get (getInt16be)
 
 data ApiKey
     = Produce
@@ -258,3 +260,6 @@ apiKeyToBuilder AllocateProducerIds = int16BE 67
 
 
 type ApiVersion = Int16
+
+getApiKey :: Get ApiKey
+getApiKey = toEnum . fromIntegral <$> getInt16be

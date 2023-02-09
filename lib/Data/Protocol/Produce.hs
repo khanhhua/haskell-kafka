@@ -92,7 +92,7 @@ getPartitionResponseArray = getArray getPartitionResponseItem
 getPartitionResponseItem :: Get PartitionResponse
 getPartitionResponseItem = do
   index <- getInt32be
-  errorCode <- toEnum . fromIntegral <$> getInt16be
+  errorCode <- getErrorCode
   baseOffset <- getInt64be
 
   return (index, errorCode, baseOffset)
