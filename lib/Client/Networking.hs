@@ -57,7 +57,7 @@ sendAndRecv :: KafkaRequest a => Socket -> a -> CorrelationId -> IO B.ByteString
 sendAndRecv sock req correlationId = do
   let
     bytes = encodeMessage req correlationId
-  print $ BL.length bytes
-  print bytes
+  print $ "Sending " <> show (BL.length bytes) <> " bytes"
+  -- print bytes
   NSBL.sendAll sock bytes
   NS.recv sock dEFAULT_BUFFER_SIZE

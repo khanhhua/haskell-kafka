@@ -28,6 +28,7 @@ type ReplicaNodeId = Int32
 type IsrNodeId = Int32
 type Partition = (ErrorCode, PartitionIndex, LeaderId, [ReplicaNodeId], [IsrNodeId])
 type Topic = (ErrorCode, TopicName, [Partition])
+type ControllerId = Int32
 
 data MetadataRequest
   = MetadataRequestV0 [TopicName]
@@ -36,13 +37,13 @@ data MetadataRequest
 
 data MetadataResponse
   = MetadataResponseV0 [Broker] [Topic]
-  | MetadataResponseV1 [Broker] [Topic]
+  | MetadataResponseV1 [Broker] ControllerId [Topic]
   deriving Show
 
 instance KafkaRequest MetadataRequest where
   header :: CorrelationId -> MetadataRequest -> MessageHeader
   header correlationId (MetadataRequestV0 {}) =
-    RequestHeaderV0 Metadata 0 correlationId
+    RequestHeaderV1 Metadata 1 correlationId Nothing
   header correlationId _ =
     RequestHeaderV1 Metadata 1 correlationId Nothing
   body :: MetadataRequest -> Builder
@@ -63,6 +64,13 @@ getMetadataResponse 0 = do
   topics <- getArray getTopic
 
   return $ MetadataResponseV0 brokers topics
+
+getMetadataResponse 1 = do
+  brokers <- getArray getBroker
+  controllerId <- getInt32be
+  topics <- getArray getTopic
+
+  return $ MetadataResponseV1 brokers controllerId topics
 
 getMetadataResponse _ = undefined
 

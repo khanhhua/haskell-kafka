@@ -1,6 +1,6 @@
 module Client.Broker (getSupportedApis, getMetadata) where
 
-import Data.ByteString.Lazy as BL ( fromStrict, toStrict )
+import Data.ByteString.Lazy as BL ( fromStrict )
 import Network.Socket (Socket)
 
 import Data.Protocol.ApiVersions (ApiKeyVersion, ApiVersionsRequest (ApiVersionsRequestV2), ApiVersionsResponse (ApiVersionsReponseV0, ApiVersionsReponseV1), getApiVersionsResponse)
@@ -8,11 +8,11 @@ import Data.Protocol (decodeResponse)
 import Data.Binary (Get)
 import Data.Protocol.MessageHeader (CorrelationId)
 import Data.Binary.Get (runGet)
-import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV0), MetadataResponse (MetadataResponseV0), getMetadataResponse)
+import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV4, MetadataRequestV0), MetadataResponse (MetadataResponseV0, MetadataResponseV1), getMetadataResponse)
 import Data.Protocol.Types (TopicName)
 
 import Client.Networking (sendAndRecv)
-import Data.ByteString.Builder (byteStringHex)
+import Data.Protocol.ApiKey (ApiVersion)
 
 
 getSupportedApis :: Socket -> IO [ApiKeyVersion]
@@ -23,7 +23,7 @@ getSupportedApis sock = do
     req = ApiVersionsRequestV2
 
   bytes <- BL.fromStrict <$> sendAndRecv sock req correlationId
-  (print . byteStringHex . BL.toStrict) bytes
+  -- (print . byteStringHex . BL.toStrict) bytes
   let
     (_correlationId, apiVersionsResponse) = runGet decoder bytes
   -- TODO check if correlationId matches, raise Error if foreign correlationId is returned on this socket
@@ -45,11 +45,12 @@ getMetadata sock topicName = do
   bytes <- sendAndRecv sock req correlationId
 
   let
-    (_correlationId, metadataResponse) = runGet decoder (BL.fromStrict bytes)
+    (_correlationId, metadataResponse) = runGet (decoder 1) (BL.fromStrict bytes)
+  print metadataResponse
   case metadataResponse of
     MetadataResponseV0 brokers _ -> return brokers
-    _ -> undefined
+    MetadataResponseV1 brokers _ _ -> return brokers
 
   where
-    decoder :: Get (CorrelationId, MetadataResponse)
-    decoder = decodeResponse (getMetadataResponse 0)
+    decoder :: ApiVersion -> Get (CorrelationId, MetadataResponse)
+    decoder = decodeResponse . getMetadataResponse
