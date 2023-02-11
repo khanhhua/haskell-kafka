@@ -54,7 +54,8 @@ library haskell-kafka-lib
     import: shared-properties
     hs-source-dirs:   lib
     exposed-modules:
-        Client.Broker
+        Client.Networking
+      , Client.Broker
       , Data.Protocol
       , Data.Protocol.ApiKey
       , Data.Protocol.ApiVersions

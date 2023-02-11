@@ -22,12 +22,13 @@ data ProduceRequest
   = ProduceRequestV0 Acks TimeoutMs [TopicData]
   | ProduceRequestV1 Acks TimeoutMs [TopicData]
   | ProduceRequestV3 TransactionId Acks TimeoutMs [TopicData]
-
+  deriving Show
 
 data ProduceResponse
   = ProduceResponseV0 TopicName [PartitionResponse]
   | ProduceResponseV1 TopicName [PartitionResponse] ThrottleTimeMs
   | ProduceResponseV3 TopicName [PartitionResponse] ThrottleTimeMs
+  deriving Show
 
 
 instance KafkaRequest ProduceRequest where

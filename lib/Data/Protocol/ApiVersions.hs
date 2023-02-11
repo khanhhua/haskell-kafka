@@ -1,8 +1,9 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Data.Protocol.ApiVersions where
 
 import Data.Protocol.ApiKey ( ApiKey(ApiVersions), ApiVersion, getApiKey )
-import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV0))
+import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV1))
 import Data.Protocol.Classes
 import Data.Binary.Builder (empty)
 import Data.Protocol.Types (ErrorCode, ThrottleTimeMs, getErrorCode)
@@ -19,17 +20,19 @@ type MaxVersion = Int16
 type ApiKeyVersion = (ApiKey, MinVersion, MaxVersion)
 
 data ApiVersionsRequest
-  = ApiVersionsRequestV0
+  = ApiVersionsRequestV2
+  deriving Show
 
 data ApiVersionsResponse
   = ApiVersionsReponseV0 ErrorCode [ApiKeyVersion]
   | ApiVersionsReponseV1 ErrorCode [ApiKeyVersion] ThrottleTimeMs
+  deriving Show
 
 
 instance KafkaRequest ApiVersionsRequest where
   header :: CorrelationId -> ApiVersionsRequest -> MessageHeader
-  header correlationId ApiVersionsRequestV0 =
-    RequestHeaderV0 ApiVersions 1 correlationId
+  header correlationId ApiVersionsRequestV2 =
+    RequestHeaderV1 ApiVersions 2 correlationId Nothing
   body = const empty
 
 

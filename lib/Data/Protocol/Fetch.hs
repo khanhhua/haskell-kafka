@@ -35,6 +35,7 @@ type Topic = (TopicName, [PartitionRequest])
 data FetchRequest
   = FetchRequestV0 ReplicaId MaxWaitMs MinBytes [Topic]
   | FetchRequestV1 ReplicaId MaxWaitMs MinBytes [Topic]
+  deriving Show
 
 type PartitionData = (PartitionIndex, ErrorCode, HighWatermark, Records)
 

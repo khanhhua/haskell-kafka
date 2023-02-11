@@ -32,9 +32,12 @@ type Topic = (ErrorCode, TopicName, [Partition])
 data MetadataRequest
   = MetadataRequestV0 [TopicName]
   | MetadataRequestV4 [TopicName] AllowAutoTopicCreation
+  deriving Show
 
 data MetadataResponse
   = MetadataResponseV0 [Broker] [Topic]
+  | MetadataResponseV1 [Broker] [Topic]
+  deriving Show
 
 instance KafkaRequest MetadataRequest where
   header :: CorrelationId -> MetadataRequest -> MessageHeader

@@ -14,7 +14,7 @@ type CorrelationId = Int32
 data MessageHeader
   = RequestHeaderV0 ApiKey ApiVersion CorrelationId
   | RequestHeaderV1 ApiKey ApiVersion CorrelationId NullableString
-
+  deriving Show
 
 headerToBuilder :: MessageHeader -> Builder
 headerToBuilder (RequestHeaderV0 apiKey apiVersion correlationId) =

@@ -129,7 +129,7 @@ data ErrorCode
     | FETCH_SESSION_TOPIC_ID_ERROR
     | INELIGIBLE_REPLICA
     | NEW_LEADER_ELECTED
-
+  deriving Show
 
 errorCodeToBuilder :: ErrorCode -> Builder
 errorCodeToBuilder UNKNOWN_SERVER_ERROR = int16BE (-1)

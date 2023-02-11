@@ -3,15 +3,15 @@ module Data.Protocol where
 import Data.Binary.Builder (toLazyByteString)
 import Data.Binary (encode)
 import Data.Binary.Get
-    ( getInt16be, getInt32be, getByteString, Get )
-
-import Data.ByteString (ByteString, length)
+    ( Get
+    , getInt32be
+    )
 
 import Prelude hiding (length)
-import Data.Protocol.MessageHeader (MessageHeader(..), headerToBuilder, CorrelationId)
+import Data.Protocol.MessageHeader (headerToBuilder, CorrelationId)
 import Data.Protocol.Classes
-import Data.ByteString.Lazy (toStrict)
-
+import qualified Data.ByteString.Lazy as B
+import Data.ByteString.Builder (int32BE)
 
 {-|
 Consumer of Request is responsible for generating network friendly bytestring
@@ -19,14 +19,14 @@ in two steps:
 - Construct the builders for header and body
 - and apply them to the function as parameters
 -}
-encodeMessage :: KafkaRequest a => a -> CorrelationId -> ByteString
+encodeMessage :: KafkaRequest a => a -> CorrelationId -> B.ByteString
 encodeMessage message correlationId =
   let
-    headerBs = (toStrict . toLazyByteString . headerToBuilder . header correlationId) message
-    bodyBs = (toStrict . toLazyByteString . body) message
+    headerBs = (toLazyByteString . headerToBuilder . header correlationId) message
+    bodyBs = (toLazyByteString . body) message
     payload = headerBs <> bodyBs
-    size = length payload
-  in (toStrict . encode) size <> payload
+    size = (toLazyByteString . int32BE . fromIntegral . B.length) payload
+  in size <> payload
 
 
 decodeResponse :: Get a -> Get (CorrelationId, a)

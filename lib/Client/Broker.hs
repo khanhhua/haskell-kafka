@@ -1,26 +1,18 @@
 module Client.Broker (getSupportedApis, getMetadata) where
 
+import Data.ByteString.Lazy as BL ( fromStrict, toStrict )
 import Network.Socket (Socket)
-import Network.Socket.ByteString (recv, sendAll)
 
-import Data.Protocol.ApiVersions (ApiKeyVersion, ApiVersionsRequest (ApiVersionsRequestV0), ApiVersionsResponse (ApiVersionsReponseV0, ApiVersionsReponseV1), getApiVersionsResponse)
-import Data.Protocol (encodeMessage, decodeResponse)
+import Data.Protocol.ApiVersions (ApiKeyVersion, ApiVersionsRequest (ApiVersionsRequestV2), ApiVersionsResponse (ApiVersionsReponseV0, ApiVersionsReponseV1), getApiVersionsResponse)
+import Data.Protocol (decodeResponse)
 import Data.Binary (Get)
 import Data.Protocol.MessageHeader (CorrelationId)
 import Data.Binary.Get (runGet)
-import qualified Data.ByteString.Lazy as B
-import Data.Protocol.Classes (KafkaRequest)
 import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV0), MetadataResponse (MetadataResponseV0), getMetadataResponse)
 import Data.Protocol.Types (TopicName)
 
-
-dEFAULT_BUFFER_SIZE = 4096 :: Int
-
-
-sendAndRecv :: KafkaRequest a => Socket -> a -> CorrelationId -> IO B.ByteString
-sendAndRecv sock req correlationId = do
-  sendAll sock (encodeMessage req correlationId)
-  B.fromStrict <$> recv sock dEFAULT_BUFFER_SIZE
+import Client.Networking (sendAndRecv)
+import Data.ByteString.Builder (byteStringHex)
 
 
 getSupportedApis :: Socket -> IO [ApiKeyVersion]
@@ -28,12 +20,12 @@ getSupportedApis sock = do
   let
     -- TODO correlationId MUST BE incremental, possibly via IO
     correlationId = 1
-    req = ApiVersionsRequestV0
+    req = ApiVersionsRequestV2
 
-  bytes <- sendAndRecv sock req correlationId
-
+  bytes <- BL.fromStrict <$> sendAndRecv sock req correlationId
+  (print . byteStringHex . BL.toStrict) bytes
   let
-    (_messageHeader, apiVersionsResponse) = runGet decoder bytes
+    (_correlationId, apiVersionsResponse) = runGet decoder bytes
   -- TODO check if correlationId matches, raise Error if foreign correlationId is returned on this socket
   case apiVersionsResponse of
     ApiVersionsReponseV0 _errorCode apiVersions -> return apiVersions
@@ -53,9 +45,10 @@ getMetadata sock topicName = do
   bytes <- sendAndRecv sock req correlationId
 
   let
-    (_messageHeader, metadataResponse) = runGet decoder bytes
+    (_correlationId, metadataResponse) = runGet decoder (BL.fromStrict bytes)
   case metadataResponse of
     MetadataResponseV0 brokers _ -> return brokers
+    _ -> undefined
 
   where
     decoder :: Get (CorrelationId, MetadataResponse)
