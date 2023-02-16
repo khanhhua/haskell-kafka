@@ -25,9 +25,11 @@ common shared-properties
   default-language: Haskell2010
   build-depends:
       base >= 4.16.4.0
+    , digest >= 0.0.1.5
     , network >= 3.1.2.7
     , bytestring >= 0.11.3.1
     , binary >= 0.8.0.0
+    , time >= 1.11.1.1
   default-extensions:
       OverloadedStrings
   ghc-options:
@@ -56,13 +58,16 @@ library haskell-kafka-lib
     exposed-modules:
         Client.Networking
       , Client.Broker
+      , Client.Producer
       , Data.Protocol
       , Data.Protocol.ApiKey
       , Data.Protocol.ApiVersions
       , Data.Protocol.Array
       , Data.Protocol.Classes
       , Data.Protocol.Fetch
+      , Data.Protocol.InitProducerId
       , Data.Protocol.MessageHeader
+      , Data.Protocol.MessageSet
       , Data.Protocol.Metadata
       , Data.Protocol.NullableByte
       , Data.Protocol.NullableString

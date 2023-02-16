@@ -1,12 +1,12 @@
 module Data.Protocol.Types where
     
 import Data.Int
-import Data.ByteString (ByteString)
 import Data.Protocol.NullableString (NullableString)
 import Data.ByteString.Builder (int16BE)
 import Data.Binary (Get)
 import Data.Binary.Builder (Builder)
 import Data.Binary.Get (getInt16be)
+import Data.Protocol.NullableByte (NullableByte)
 
 
 data PrimitiveType
@@ -472,7 +472,7 @@ getErrorCode = toEnum . fromIntegral <$> getInt16be
 
 type ReplicaId = Int32
 
-type Records = ByteString
+type Records = NullableByte
 
 type TransactionId = NullableString
 

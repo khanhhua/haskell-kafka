@@ -9,12 +9,13 @@ import Data.Protocol.Classes
     ( KafkaRequest(..) )
 import Data.Protocol.Types
 import Data.Protocol.MessageHeader (MessageHeader (RequestHeaderV0, RequestHeaderV1), CorrelationId)
-import Data.Protocol.NullableString (nullableStringToBuilder, getNullableString)
+import Data.Protocol.NullableString (nullableStringToBuilder, getNullableString, stringToBuilder)
 import Data.Protocol.ApiKey
 import Data.Protocol.Array (getArray, arrayToBuilder)
+import Data.Protocol.NullableByte (nullableBytesToBuilder)
 
 
-type TopicData = (TopicName, Index, Records)
+type TopicData = (TopicName, [PartitionData])
 
 type PartitionResponse = (Index, ErrorCode, BaseOffset)
 
@@ -41,10 +42,14 @@ instance KafkaRequest ProduceRequest where
 
 
 topicDataToBuilder :: TopicData -> Builder
-topicDataToBuilder (name, index, records) =
-  string8 name
-  <> int32BE index
-  <> byteString records
+topicDataToBuilder (name, partitionData) =
+  stringToBuilder name
+  <> arrayToBuilder partitionDataToBuilder partitionData
+
+partitionDataToBuilder :: PartitionData -> Builder
+partitionDataToBuilder (index, records) =
+  int32BE index
+  <> nullableBytesToBuilder records
 
 
 toBuilder :: ProduceRequest -> Builder

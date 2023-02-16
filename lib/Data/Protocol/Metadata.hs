@@ -7,7 +7,7 @@ import Data.Binary.Builder (Builder)
 
 import Data.Protocol.Types (TopicName, ErrorCode, PartitionIndex, getErrorCode)
 import Data.Protocol.Classes (KafkaRequest (header, body))
-import Data.Protocol.MessageHeader (MessageHeader (RequestHeaderV1, RequestHeaderV0), CorrelationId)
+import Data.Protocol.MessageHeader (CorrelationId, MessageHeader (RequestHeaderV1))
 import Data.Protocol.ApiKey (ApiKey(Metadata), ApiVersion)
 import Data.Protocol.Array (arrayToBuilder, getArray)
 import Data.Protocol.NullableString (stringToBuilder, getString)

@@ -8,7 +8,7 @@ import Data.Protocol (decodeResponse)
 import Data.Binary (Get)
 import Data.Protocol.MessageHeader (CorrelationId)
 import Data.Binary.Get (runGet)
-import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV4, MetadataRequestV0), MetadataResponse (MetadataResponseV0, MetadataResponseV1), getMetadataResponse)
+import Data.Protocol.Metadata (Broker, MetadataRequest (MetadataRequestV0), MetadataResponse (MetadataResponseV0, MetadataResponseV1), getMetadataResponse)
 import Data.Protocol.Types (TopicName)
 
 import Client.Networking (sendAndRecv)
